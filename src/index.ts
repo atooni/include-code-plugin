@@ -1,5 +1,7 @@
-const hello = (name: string) => {
-  console.log("Hello, " + name + "!")
-}
+import { transform } from './transform';
 
-hello("Andreas")
+const attacher = () => {
+  return transform;
+};
+
+export default attacher;
