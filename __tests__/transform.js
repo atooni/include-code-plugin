@@ -47,8 +47,6 @@ describe('Remark transformer', () => {
           throw new Error(err);
         }
 
-        console.log(actual.contents)
-
         expect(actual && actual.contents).toEqual(expected);
         done();
       });
