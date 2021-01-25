@@ -4,6 +4,14 @@ import { fetchCodeFromFile } from './fetchCode';
 type OptionString = string | undefined
 type OptionCodeBlock = CodeBlock | undefined
 
+function get<V>(v: (V | undefined)): V {
+  if (v === undefined) {
+    throw new Error("Mandatory variable is not defined")
+  } else {
+    return v
+  }
+}
+
 export interface IncludeOptions {
   marker: string;
 }
@@ -25,6 +33,19 @@ class CodeBlock {
   }
 }
 
+// Take a string and extract a simple named parameter
+export function extractParam(name: string, input: string): OptionString {
+  const regExp = /([a-z]+)=\"([^\"]+)\"/g
+
+  var result = undefined
+  var elem;
+  while ((result == undefined) && (elem = regExp.exec(input)) !== null) {
+    if (elem[1] == name) result = elem[2]
+  }
+
+  return result;
+}
+
 function extractCodeBlock(options: IncludeOptions, node: any): OptionCodeBlock {
   const { children } = node
 
@@ -33,15 +54,23 @@ function extractCodeBlock(options: IncludeOptions, node: any): OptionCodeBlock {
   if (children.length >= 1 && children[0].value.startsWith(options.marker)) {
     // Extract codeblock from filesystem 
     if (children.length == 1) {
-      let parts = children[0].value.split(" ")
+      try {
+        const lang = get(extractParam("lang", children[0].value))
+        const file = get(extractParam("file", children[0].value))
+        const title = extractParam("title", children[0].value)
 
-      if (parts.length >= 3) {
         cb = new CodeBlock(
-          parts[1],
-          fetchCodeFromFile(parts[2]),
-          (parts.length == 4) ? parts[3] : undefined
+          lang,
+          fetchCodeFromFile(file),
+          title
         )
+      } catch (e) {
+        console.log("Unable to resolve [" + children[0].value + "]")
       }
+    } else if (children.length == 3) {
+      // Extract code block from url
+    } else {
+
     }
   }
 
