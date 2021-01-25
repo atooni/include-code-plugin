@@ -93,7 +93,7 @@ const applyCodeBlock = (options: IncludeOptions, node: any) => {
         title
       )
       // Extract code block from url
-    }
+    } else { }
   }
 
   return cb;
@@ -103,6 +103,9 @@ export const transform = (options: IncludeOptions) => (tree: any) => new Promise
 
   const nodesToChange: CodeBlock[] = [];
 
+  // First, collect all the node that need to be changed, so that 
+  // we can iterate over them later on and fetch the file contents 
+  // asynchronously 
   const visitor = (node: any) => {
     const cb = applyCodeBlock(options, node);
     if (cb !== undefined) {
@@ -112,6 +115,7 @@ export const transform = (options: IncludeOptions) => (tree: any) => new Promise
 
   visit(tree, 'paragraph', visitor);
 
+  // Now go over the collected nodes and change them 
   for (const cb of nodesToChange) {
     await cb.createNode()
   }
