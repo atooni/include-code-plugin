@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import remark from 'remark';
-import plugin from '../src/index';
+import plugin from '../index';
 
 const fixtureDirName = '__fixtures__';
 const inputFileName = 'input.md';
