@@ -1,5 +1,5 @@
 import visit from 'unist-util-visit';
-import { fetchCodeFromFile } from './fetchCode';
+import { fetchCodeFromFile, fetchCodeFromUrl } from './fetchCode';
 
 type OptionString = string | undefined
 type OptionCodeBlock = CodeBlock | undefined
@@ -19,17 +19,22 @@ export interface IncludeOptions {
 // A code block that needs to be inserted into the md document.
 class CodeBlock {
   constructor(
+    readonly node: any,
+    readonly fromUrl: boolean,
     readonly lang: string,
-    readonly code: Array<string>,
+    readonly codeRef: string,
     readonly title: OptionString
   ) { }
 
-  createNode(node: any): void {
-    node.type = 'code';
-    node.children = undefined;
-    node.lang = this.lang;
-    if (typeof this.title !== "undefined") node.meta = 'title="' + this.title + '"';
-    node.value = this.code.reduce((a, b) => a + "\n" + b);
+  createNode = async () => {
+    this.node.type = 'code';
+    this.node.children = undefined;
+    this.node.lang = this.lang;
+    if (typeof this.title !== "undefined") this.node.meta = 'title="' + this.title + '"';
+
+    const code = this.fromUrl ? (await fetchCodeFromUrl(this.codeRef)) : fetchCodeFromFile(this.codeRef);
+
+    this.node.value = code.reduce((a, b) => a + "\n" + b)
   }
 }
 
@@ -46,7 +51,7 @@ export function extractParam(name: string, input: string): OptionString {
   return result;
 }
 
-function extractCodeBlock(options: IncludeOptions, node: any): OptionCodeBlock {
+const applyCodeBlock = (options: IncludeOptions, node: any) => {
   const { children } = node
 
   let cb = undefined
@@ -60,33 +65,56 @@ function extractCodeBlock(options: IncludeOptions, node: any): OptionCodeBlock {
         const title = extractParam("title", children[0].value)
 
         cb = new CodeBlock(
+          node,
+          false,
           lang,
-          fetchCodeFromFile(file),
+          file,
           title
         )
       } catch (e) {
         console.log("Unable to resolve [" + children[0].value + "]")
       }
-    } else if (children.length == 3) {
-      // Extract code block from url
-    } else {
+    } else if (children.length >= 2) {
+      var srcLink: OptionString = undefined
+      var text = ""
+      for (var c of children) {
+        if (c.type == 'link' && srcLink === undefined) srcLink = c.url
+        if (c.type == 'text') text = text + c.value + " "
+      }
 
+      const lang = get(extractParam("lang", text));
+      const title = extractParam("title", text);
+
+      cb = new CodeBlock(
+        node,
+        true,
+        lang,
+        get(srcLink),
+        title
+      )
+      // Extract code block from url
     }
   }
 
   return cb;
 }
 
-export const transform = (options: IncludeOptions) => (tree: any) => {
+export const transform = (options: IncludeOptions) => (tree: any) => new Promise<void>(async (resolve) => {
+
+  const nodesToChange: CodeBlock[] = [];
 
   const visitor = (node: any) => {
-
-    let codeblock = extractCodeBlock(options, node)
-
-    if (codeblock !== undefined) {
-      codeblock.createNode(node)
+    const cb = applyCodeBlock(options, node);
+    if (cb !== undefined) {
+      nodesToChange.push(cb)
     }
+  };
+
+  visit(tree, 'paragraph', visitor);
+
+  for (const cb of nodesToChange) {
+    await cb.createNode()
   }
 
-  visit(tree, 'paragraph', visitor)
-};
+  resolve();
+});
