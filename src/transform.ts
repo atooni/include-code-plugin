@@ -1,7 +1,14 @@
 import visit from 'unist-util-visit';
+import { fetchCodeFromFile } from './fetchCode';
 
 type OptionString = string | undefined
+type OptionCodeBlock = CodeBlock | undefined
 
+export interface IncludeOptions {
+  marker: string;
+}
+
+// A code block that needs to be inserted into the md document.
 class CodeBlock {
   constructor(
     readonly lang: string,
@@ -18,22 +25,38 @@ class CodeBlock {
   }
 }
 
-export const transform = (tree: any) => {
+function extractCodeBlock(options: IncludeOptions, node: any): OptionCodeBlock {
+  const { children } = node
+
+  let cb = undefined
+
+  if (children.length >= 1 && children[0].value.startsWith(options.marker)) {
+    // Extract codeblock from filesystem 
+    if (children.length == 1) {
+      let parts = children[0].value.split(" ")
+
+      if (parts.length >= 3) {
+        cb = new CodeBlock(
+          parts[1],
+          fetchCodeFromFile(parts[2]),
+          (parts.length == 4) ? parts[3] : undefined
+        )
+      }
+    }
+  }
+
+  return cb;
+}
+
+export const transform = (options: IncludeOptions) => (tree: any) => {
 
   const visitor = (node: any) => {
-    const { children } = node;
 
-    if (children.length >= 1 && children[0].value.startsWith('CODE_INCLUDE')) {
+    let codeblock = extractCodeBlock(options, node)
 
-      let cb = new CodeBlock(
-        /* lang = */ 'js',
-        /* code = */['const a = 1', 'const b = 2'],
-        /* title */ "Foo"
-      )
-
-      cb.createNode(node)
+    if (codeblock !== undefined) {
+      codeblock.createNode(node)
     }
-
   }
 
   visit(tree, 'paragraph', visitor)
