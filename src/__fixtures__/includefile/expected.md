@@ -5,11 +5,11 @@ Hello Andreas
 ```typescript
 import { IncludeOptions, transform } from './transform';
 
-const attacher = (options: IncludeOptions) => {
+const plugin = (options: IncludeOptions) => {
   return transform(options);
 };
 
-export default attacher;
+export = plugin;
 
 ```
 
