@@ -23,8 +23,34 @@ class CodeBlock {
     readonly fromUrl: boolean,
     readonly lang: string,
     readonly codeRef: string,
-    readonly title: OptionString
+    readonly title: OptionString,
+    readonly doctag: OptionString
   ) { }
+
+  private selectLines = (lines: string[]) => {
+
+    if (this.doctag === undefined) {
+      return lines;
+    } else {
+      const result: string[] = [];
+      var collecting: boolean = false;
+
+      const pattern = "doctag<" + this.doctag + ">";
+
+      for (var line of lines) {
+        if (collecting) {
+          if (line.match("end:" + pattern) != null) {
+            break;
+          } else {
+            result.push(line);
+          }
+        } else {
+          collecting = line.match(pattern) != null;
+        }
+      }
+      return result;
+    }
+  }
 
   createNode = async () => {
     this.node.type = 'code';
@@ -34,10 +60,11 @@ class CodeBlock {
 
     const code = this.fromUrl ? (await fetchCodeFromUrl(this.codeRef)) : fetchCodeFromFile(this.codeRef);
 
-    this.node.value = code.reduce((a, b) => a + "\n" + b)
+    this.node.value = this.selectLines(code).reduce((a, b) => a + "\n" + b)
   }
 }
 
+// doctag<extractParam>
 // Take a string and extract a simple named parameter
 export function extractParam(name: string, input: string): OptionString {
   const regExp = /([a-z]+)=\"([^\"]+)\"/g
@@ -50,6 +77,7 @@ export function extractParam(name: string, input: string): OptionString {
 
   return result;
 }
+// end:doctag<extractParam>
 
 const applyCodeBlock = (options: IncludeOptions, node: any) => {
   const { children } = node
@@ -58,42 +86,38 @@ const applyCodeBlock = (options: IncludeOptions, node: any) => {
 
   if (children.length >= 1 && children[0].value.startsWith(options.marker)) {
     // Extract codeblock from filesystem 
-    if (children.length == 1) {
-      try {
-        const lang = get(extractParam("lang", children[0].value))
-        const file = get(extractParam("file", children[0].value))
-        const title = extractParam("title", children[0].value)
 
-        cb = new CodeBlock(
-          node,
-          false,
-          lang,
-          file,
-          title
-        )
-      } catch (e) {
-        console.log("Unable to resolve [" + children[0].value + "]")
-      }
-    } else if (children.length >= 2) {
-      var srcLink: OptionString = undefined
-      var text = ""
-      for (var c of children) {
-        if (c.type == 'link' && srcLink === undefined) srcLink = c.url
-        if (c.type == 'text') text = text + c.value + " "
+    var codeRef: OptionString = undefined;
+    var pText: string = '';
+    var fromUrl: boolean = false;
+
+    try {
+      if (children.length == 1) {
+        codeRef = get(extractParam("file", children[0].value));
+        pText = children[0].value;
+      } else if (children.length >= 2) {
+        for (var c of children) {
+          if (c.type == 'link' && codeRef === undefined) codeRef = c.url
+          if (c.type == 'text') pText = pText + c.value + " "
+        }
+        fromUrl = true;
       }
 
-      const lang = get(extractParam("lang", text));
-      const title = extractParam("title", text);
+      const lang = get(extractParam("lang", pText));
+      const title = extractParam("title", pText);
+      const doctag = extractParam("doctag", pText);
 
       cb = new CodeBlock(
         node,
-        true,
+        fromUrl,
         lang,
-        get(srcLink),
-        title
+        get(codeRef),
+        title,
+        doctag
       )
-      // Extract code block from url
-    } else { }
+    } catch (e) {
+      console.log("Unable to resolve [" + children[0].value + "]")
+    }
   }
 
   return cb;
