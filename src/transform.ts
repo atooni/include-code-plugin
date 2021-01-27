@@ -84,14 +84,14 @@ const applyCodeBlock = (options: IncludeOptions, node: any) => {
 
   let cb = undefined
 
-  if (children.length >= 1 && children[0].value.startsWith(options.marker)) {
-    // Extract codeblock from filesystem 
+  try {
+    if (children.length >= 1 && children[0].value.startsWith(options.marker)) {
+      // Extract codeblock from filesystem 
 
-    var codeRef: OptionString = undefined;
-    var pText: string = '';
-    var fromUrl: boolean = false;
+      var codeRef: OptionString = undefined;
+      var pText: string = '';
+      var fromUrl: boolean = false;
 
-    try {
       if (children.length == 1) {
         codeRef = get(extractParam("file", children[0].value));
         pText = children[0].value;
@@ -115,9 +115,9 @@ const applyCodeBlock = (options: IncludeOptions, node: any) => {
         title,
         doctag
       )
-    } catch (e) {
-      console.log("Unable to resolve [" + children[0].value + "]")
     }
+  } catch (e) {
+    console.log("Unable to resolve [" + children[0].value + "]")
   }
 
   return cb;
