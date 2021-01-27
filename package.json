@@ -1,6 +1,6 @@
 {
   "name": "blended-include-code-plugin",
-  "version": "0.0.6",
+  "version": "0.1.0",
   "description": "include code sgements from local file or url with remark",
   "repository": "https://github.com/atooni/include-code-plugin.git",
   "license": "Apache 2.0",

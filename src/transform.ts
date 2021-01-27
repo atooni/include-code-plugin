@@ -117,7 +117,7 @@ const applyCodeBlock = (options: IncludeOptions, node: any) => {
       )
     }
   } catch (e) {
-    console.log("Unable to resolve [" + children[0].value + "]")
+    // do nothing 
   }
 
   return cb;
