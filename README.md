@@ -12,33 +12,33 @@ The include code plugin is normally used in the context of a site generator usin
 1. Include `blended-include-code-plugin": "0.1.0"` in the _package.json_ of the docusaurus website project. 
 1. Within _docusaurus.config.js, configure the include code plugin with a marker for the sections of the site where code shall be included:
 
-   ```
-    presets: [
-    [
-      '@docusaurus/preset-classic',
-      {
-        docs: {
-          sidebarPath: require.resolve('./sidebars.js'),
-          remarkPlugins: [
-            [require('blended-include-code-plugin'), { marker: 'CODE_INCLUDE' }]
-          ],
-        },
-        blog: {
-          showReadingTime: false,
-          remarkPlugins: [
-            [require('blended-include-code-plugin'), { marker: 'CODE_INCLUDE' }]
-          ],
-        },
-        theme: {
-          customCss: [
-            require.resolve('./src/css/custom.css'),
-            //require.resolve('./node_modules/prism-themes/themes/prism-cb.css')
-          ],
-        },
+```
+  presets: [
+  [
+    '@docusaurus/preset-classic',
+    {
+      docs: {
+        sidebarPath: require.resolve('./sidebars.js'),
+        remarkPlugins: [
+          [require('blended-include-code-plugin'), { marker: 'CODE_INCLUDE' }]
+        ],
       },
-    ],
-  ]
-   ```
+      blog: {
+        showReadingTime: false,
+        remarkPlugins: [
+          [require('blended-include-code-plugin'), { marker: 'CODE_INCLUDE' }]
+        ],
+      },
+      theme: {
+        customCss: [
+          require.resolve('./src/css/custom.css'),
+          //require.resolve('./node_modules/prism-themes/themes/prism-cb.css')
+        ],
+      },
+    },
+  ],
+]
+```
 
 ## Usage
 
